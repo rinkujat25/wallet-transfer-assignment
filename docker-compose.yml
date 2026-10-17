@@ -117,6 +117,20 @@ services:
     volumes:
       - ./:/usr/src
 
+  # Same analysis against SonarQube Cloud (sonarcloud.io) instead of the local server.
+  # make sonar-cloud-scan   needs SONAR_TOKEN and SONAR_ORGANIZATION
+  sonar-scanner-cloud:
+    image: sonarsource/sonar-scanner-cli:11
+    profiles: [sonar-cloud]
+    environment:
+      SONAR_HOST_URL: https://sonarcloud.io
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+    # The project key comes from sonar-project.properties.
+    command:
+      - "-Dsonar.organization=${SONAR_ORGANIZATION:-}"
+    volumes:
+      - ./:/usr/src
+
 volumes:
   pgdata:
   sonar_data:

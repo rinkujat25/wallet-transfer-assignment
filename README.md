@@ -190,6 +190,16 @@ SONAR_TOKEN=<your-token> make sonar-scan
 
 The results appear in the `wallet-transfer-assignment` project at http://localhost:9000. `make sonar-down` stops SonarQube (add `-v` to `docker compose` yourself to wipe its data).
 
+#### SonarQube Cloud instead of the local server
+
+A token from [SonarQube Cloud](https://sonarcloud.io) works too. Import the repository there, put the **project key** it assigns (usually `<organization>_<repository>`) in `sonar.projectKey` in [`sonar-project.properties`](./sonar-project.properties), note your **organization key**, then run:
+
+```bash
+SONAR_TOKEN=<cloud-token> SONAR_ORGANIZATION=<organization-key> make sonar-cloud-scan
+```
+
+This uploads the source code and coverage to sonarcloud.io. Cloud tokens do not work against the local SonarQube (`make sonar-scan`) and the reverse.
+
 Coverage comes from `make coverage` (unit tests, about 60%). To include the PostgreSQL integration tests, which exercise the repositories (about 83%), run `COVERAGE_TARGET=coverage-integration SONAR_TOKEN=<your-token> make sonar-scan` with the `.env` database available. Wiring code (`cmd/`, config, database, bootstrap, middleware, GORM models) is excluded from coverage.
 
 ### Manual race test

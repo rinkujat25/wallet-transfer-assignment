@@ -3,7 +3,7 @@ export
 
 DATABASE_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: migrate-up migrate-down migrate-version test test-integration lint coverage coverage-integration sonar-up sonar-down sonar-scan docker-up docker-down docker-reset docker-logs
+.PHONY: migrate-up migrate-down migrate-version test test-integration lint coverage coverage-integration sonar-up sonar-down sonar-scan sonar-cloud-scan docker-up docker-down docker-reset docker-logs
 
 migrate-up:
 	migrate -path migrations -database "$(DATABASE_URL)" up
@@ -79,3 +79,12 @@ sonar-scan:
 	@test -n "$$SONAR_TOKEN" || { echo "Set SONAR_TOKEN (create one in SonarQube: My Account > Security)"; exit 1; }
 	@$(MAKE) $(COVERAGE_TARGET)
 	@$(COMPOSE) --profile sonar-scan run --rm sonar-scanner
+
+# Analyse against SonarQube Cloud (https://sonarcloud.io) instead of the local server.
+# SONAR_ORGANIZATION is your organization key. The project key is read from
+# sonar-project.properties (SonarQube Cloud expects "<organization>_<repository>").
+# Note: this uploads the source code and coverage to sonarcloud.io.
+sonar-cloud-scan:
+	@test -n "$$SONAR_TOKEN" -a -n "$$SONAR_ORGANIZATION" || { echo "Set SONAR_TOKEN and SONAR_ORGANIZATION (see SonarQube Cloud: My Account > Security, and your organization key)"; exit 1; }
+	@$(MAKE) $(COVERAGE_TARGET)
+	@$(COMPOSE) --profile sonar-cloud run --rm sonar-scanner-cloud
