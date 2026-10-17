@@ -219,7 +219,7 @@ Liveness check, implemented.
 
 ## 9. Observability
 
-- Implemented: structured JSON logs through `slog` for startup, shutdown and server errors; GORM SQL logging at info level; `GET /health`.
+- Implemented: structured JSON logs through `slog` for startup, shutdown and server errors; GORM logs warnings and errors only by default (`DB_LOG_LEVEL=info` prints every SQL statement with its parameters, for local debugging only); `GET /health`.
 - Not implemented: request/correlation IDs, per-transfer outcome logging, metrics, and a readiness endpoint that checks database connectivity.
 - Never log credentials or unnecessary personal information; avoid logging full request bodies.
 - Suggested metrics for later: transfer outcomes, request latency, transaction retries, deadlocks, and lock-wait duration.

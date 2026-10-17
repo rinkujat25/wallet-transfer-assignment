@@ -17,7 +17,13 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	DBSSLMode  string
+
+	// DBLogLevel controls GORM's SQL logging: silent, error, warn (default) or info.
+	// "info" logs every statement with its parameters and must not be used in production.
+	DBLogLevel string
 }
+
+var validDBLogLevels = map[string]bool{"silent": true, "error": true, "warn": true, "info": true}
 
 func Load() (*Config, error) {
 	// Load .env without overriding existing environment variables.
@@ -44,6 +50,14 @@ func Load() (*Config, error) {
 		}
 	}
 
+	dbLogLevel := os.Getenv("DB_LOG_LEVEL")
+	if dbLogLevel == "" {
+		dbLogLevel = "warn"
+	}
+	if !validDBLogLevels[dbLogLevel] {
+		return nil, fmt.Errorf("invalid DB_LOG_LEVEL %q: use silent, error, warn or info", dbLogLevel)
+	}
+
 	return &Config{
 		AppPort:    os.Getenv("APP_PORT"),
 		AppEnv:     os.Getenv("APP_ENV"),
@@ -53,5 +67,6 @@ func Load() (*Config, error) {
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBName:     os.Getenv("DB_NAME"),
 		DBSSLMode:  os.Getenv("DB_SSLMODE"),
+		DBLogLevel: dbLogLevel,
 	}, nil
 }

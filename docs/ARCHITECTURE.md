@@ -229,7 +229,7 @@ Dependencies point one way: `route → handler → service → repository → do
 
 ## 13. Observability and operations
 
-- Implemented: structured JSON startup/shutdown logs (`slog`), GORM SQL logging, `GET /health`. Planned: request/correlation ID, transfer ID, outcome, duration and error category per request. Never log credentials or sensitive payloads unnecessarily.
+- Implemented: structured JSON startup/shutdown logs (`slog`), GORM warning/error logging (`DB_LOG_LEVEL`; `info` prints all SQL and is for debugging only), `GET /health`. Planned: request/correlation ID, transfer ID, outcome, duration and error category per request. Never log credentials or sensitive payloads unnecessarily.
 - Metrics: transfer attempts and outcomes, idempotency replays/conflicts, DB transaction latency, deadlocks, lock timeouts, retry counts, ledger consistency audit failures.
 - Health: a liveness endpoint (`GET /health`) exists; a readiness check against the database is planned.
 - PostgreSQL migrations are versioned SQL files applied with golang-migrate.

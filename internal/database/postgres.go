@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"wallet-transfer-assignment/internal/config"
@@ -13,6 +12,22 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// gormLogLevel maps DB_LOG_LEVEL to a GORM log level. The default is warn:
+// the info level prints every SQL statement with its parameters, which is a
+// debugging aid and a data-leak risk in production.
+func gormLogLevel(level string) logger.LogLevel {
+	switch level {
+	case "silent":
+		return logger.Silent
+	case "error":
+		return logger.Error
+	case "info":
+		return logger.Info
+	default:
+		return logger.Warn
+	}
+}
+
 func Connect(cfg *config.Config) (*gorm.DB, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("database configuration is nil")
@@ -20,16 +35,16 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_SSLMODE"),
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBName,
+		cfg.DBSSLMode,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(gormLogLevel(cfg.DBLogLevel)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("open postgres connection: %w", err)
