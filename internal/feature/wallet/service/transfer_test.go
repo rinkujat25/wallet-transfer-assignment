@@ -586,3 +586,105 @@ func TestCreateTransfer_ConcurrentDebitsNeverOverspend(t *testing.T) {
 	}
 	assertLedgerConsistent(t, s)
 }
+
+// ---- failure at every step of the transaction ----------------------------
+
+// Whatever step fails, nothing may be left behind, and once the fault clears
+// the same idempotency key must be usable and execute exactly once.
+func TestCreateTransfer_FailureAtAnyStepRollsBackEverythingAndKeyStaysUsable(t *testing.T) {
+	steps := []struct {
+		fault   string
+		balance int64 // sender balance: 50 makes the insufficient-funds path run
+		amount  int64
+	}{
+		{"createTransfer", 1000, 100},
+		{"debit", 1000, 100},
+		{"credit", 1000, 100},
+		{"updateStatus", 1000, 100}, // PROCESSED update
+		{"saveResponse", 1000, 100},
+		{"updateStatus", 50, 100}, // FAILED update on the insufficient-funds path
+		{"saveResponse", 50, 100},
+	}
+
+	for _, step := range steps {
+		name := fmt.Sprintf("%s with balance %d", step.fault, step.balance)
+		t.Run(name, func(t *testing.T) {
+			s := newStore(map[int64]int64{1: step.balance, 2: 0})
+			injected := errors.New("injected " + step.fault)
+			s.faults = map[string]error{step.fault: injected}
+			svc := newService(s)
+
+			_, err := svc.CreateTransfer(context.Background(), req("key-12345", 1, 2, step.amount))
+			if !errors.Is(err, injected) {
+				t.Fatalf("got %v, want the injected error", err)
+			}
+			if s.txAttempts != 1 {
+				t.Errorf("attempts = %d: a non-retryable error must not be retried", s.txAttempts)
+			}
+			if s.wallets[1] != step.balance || s.wallets[2] != 0 {
+				t.Errorf("balances changed: %v", s.wallets)
+			}
+			if len(s.transfers) != 0 || len(s.ledger) != 0 || len(s.idem) != 0 {
+				t.Errorf("state leaked: transfers=%d ledger=%d idem=%d", len(s.transfers), len(s.ledger), len(s.idem))
+			}
+
+			s.faults = nil
+			res, err := svc.CreateTransfer(context.Background(), req("key-12345", 1, 2, step.amount))
+			if err != nil {
+				t.Fatalf("retry after fault cleared: %v", err)
+			}
+			wantStatus := 201
+			if step.balance < step.amount {
+				wantStatus = 409
+			}
+			if res.StatusCode != wantStatus {
+				t.Errorf("retry status = %d, want %d", res.StatusCode, wantStatus)
+			}
+			assertLedgerConsistent(t, s)
+		})
+	}
+}
+
+func TestCreateTransfer_SecondWalletLockFailureRollsBack(t *testing.T) {
+	s := newStore(map[int64]int64{1: 1000, 2: 0})
+	injected := errors.New("lock timeout")
+	s.lockErrs = []error{nil, injected} // first wallet locks, second fails
+
+	_, err := newService(s).CreateTransfer(context.Background(), req("key-12345", 1, 2, 100))
+	if !errors.Is(err, injected) {
+		t.Fatalf("got %v", err)
+	}
+	if len(s.idem) != 0 || len(s.transfers) != 0 || s.wallets[1] != 1000 {
+		t.Errorf("state leaked after lock failure")
+	}
+}
+
+// A transfer row without an idempotency record (for example legacy data) must
+// make the request fail cleanly instead of creating a second transfer.
+func TestCreateTransfer_ExistingTransferWithSameKeyIsNotDuplicated(t *testing.T) {
+	s := newStore(map[int64]int64{1: 1000, 2: 0})
+	s.transfers[1] = &domain.Transfer{ID: 1, IdempotencyKey: "key-12345", FromWalletID: 1, ToWalletID: 2, Amount: 100, Status: domain.TransferProcessed}
+
+	_, err := newService(s).CreateTransfer(context.Background(), req("key-12345", 1, 2, 100))
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if s.wallets[1] != 1000 || len(s.transfers) != 1 || len(s.ledger) != 0 || len(s.idem) != 0 {
+		t.Errorf("duplicate execution: wallets=%v transfers=%d", s.wallets, len(s.transfers))
+	}
+}
+
+// If the stored body is not valid JSON the replay still returns it untouched.
+func TestCreateTransfer_ReplayOfNonJSONStoredBodyReturnsItUnchanged(t *testing.T) {
+	s := newStore(map[int64]int64{1: 1000, 2: 0})
+	svc := newService(s)
+	if _, err := svc.CreateTransfer(context.Background(), req("key-12345", 1, 2, 100)); err != nil {
+		t.Fatal(err)
+	}
+	s.idem["key-12345"].ResponseBody = []byte("not json")
+
+	res, err := svc.CreateTransfer(context.Background(), req("key-12345", 1, 2, 100))
+	if err != nil || string(res.Body) != "not json" {
+		t.Fatalf("res=%+v err=%v", res, err)
+	}
+}

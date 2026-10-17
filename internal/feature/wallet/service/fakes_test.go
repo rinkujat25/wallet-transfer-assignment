@@ -34,6 +34,7 @@ type fakeStore struct {
 	commitErr       error // returned from WithinTransaction after fn succeeded
 	commitApplied   bool  // whether the "uncertain" commit actually persisted
 	lockCalls       int
+	faults          map[string]error // named one-shot-free faults, see fault()
 	ledgerCallCount int
 }
 
@@ -50,6 +51,10 @@ func newStore(balances map[int64]int64) *fakeStore {
 }
 
 func (s *fakeStore) id() int64 { s.nextID++; return s.nextID }
+
+// fault returns the error injected for the named step, or nil. Recognised
+// names: debit, credit, createTransfer, updateStatus, saveResponse.
+func (s *fakeStore) fault(name string) error { return s.faults[name] }
 
 type snapshot struct {
 	wallets   map[int64]int64
@@ -146,6 +151,13 @@ func (r fakeWalletRepo) GetByIDForUpdate(ctx context.Context, tx *gorm.DB, id in
 }
 
 func (r fakeWalletRepo) UpdateBalance(_ context.Context, _ *gorm.DB, id, delta int64) error {
+	name := "credit"
+	if delta < 0 {
+		name = "debit"
+	}
+	if err := r.s.fault(name); err != nil {
+		return err
+	}
 	b, ok := r.s.wallets[id]
 	if !ok {
 		return errors.New("wallet not found or insufficient balance")
@@ -162,6 +174,9 @@ func (r fakeWalletRepo) UpdateBalance(_ context.Context, _ *gorm.DB, id, delta i
 type fakeTransferRepo struct{ s *fakeStore }
 
 func (r fakeTransferRepo) Create(_ context.Context, _ *gorm.DB, t *domain.Transfer) (bool, error) {
+	if err := r.s.fault("createTransfer"); err != nil {
+		return false, err
+	}
 	for _, ex := range r.s.transfers {
 		if ex.IdempotencyKey == t.IdempotencyKey {
 			return false, nil
@@ -194,6 +209,9 @@ func (r fakeTransferRepo) GetByIdempotencyKey(_ context.Context, _ *gorm.DB, key
 }
 
 func (r fakeTransferRepo) UpdateStatus(_ context.Context, _ *gorm.DB, t *domain.Transfer) error {
+	if err := r.s.fault("updateStatus"); err != nil {
+		return err
+	}
 	if t.Status != domain.TransferProcessed && t.Status != domain.TransferFailed {
 		return domain.ErrInvalidTransition
 	}
@@ -273,6 +291,9 @@ func (r fakeIdempotencyRepo) GetByKey(_ context.Context, _ *gorm.DB, key string)
 }
 
 func (r fakeIdempotencyRepo) SaveResponse(_ context.Context, _ *gorm.DB, rec *domain.IdempotencyRecord) error {
+	if err := r.s.fault("saveResponse"); err != nil {
+		return err
+	}
 	if rec.ResponseStatus == nil || len(rec.ResponseBody) == 0 {
 		return domain.ErrInvalidIdempotency
 	}
