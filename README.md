@@ -158,6 +158,18 @@ make test-integration
 
 They cover parallel duplicate keys, double-spend attempts, opposite-direction transfers (deadlock regression), money conservation, ledger invariants and schema constraints.
 
+### Lint
+
+Static analysis uses `golangci-lint` v1.64.8 (the version pinned in CI) with the rules in [`.golangci.yml`](./.golangci.yml): the default linters plus `errorlint`, `gocritic`, `goimports`, `gosec`, `noctx`, `whitespace` and a few others. The integration-test files are linted too.
+
+```bash
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+```
+
+```bash
+make lint
+```
+
 ### Manual race test
 
 With the stack running (`make docker-up`), fire concurrent requests from Node.js 18+. Modes: `opposite` (A→B and B→A), `same-sender`, `random` and `same-key` (one idempotency key sent by every request).

@@ -3,7 +3,7 @@ export
 
 DATABASE_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: migrate-up migrate-down migrate-version test test-integration docker-up docker-down docker-reset docker-logs
+.PHONY: migrate-up migrate-down migrate-version test test-integration lint docker-up docker-down docker-reset docker-logs
 
 migrate-up:
 	migrate -path migrations -database "$(DATABASE_URL)" up
@@ -17,6 +17,11 @@ migrate-version:
 # Unit tests: domain, handler, service (in-memory fakes). No database needed.
 test:
 	go test -race ./...
+
+# Static analysis (config: .golangci.yml, same version as CI):
+#   go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+lint:
+	golangci-lint run ./...
 
 # Integration/concurrency tests against PostgreSQL from .env (migrations applied).
 test-integration:
