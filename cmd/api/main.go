@@ -56,7 +56,8 @@ func run(logger *slog.Logger) error {
 	logger.Info("database connected successfully")
 
 	app := fiber.New(fiber.Config{
-		AppName: "Wallet Transfer Service",
+		AppName:      "Wallet Transfer Service",
+		ErrorHandler: middleware.ErrorHandler,
 	})
 
 	app.Get("/health", func(c fiber.Ctx) error {

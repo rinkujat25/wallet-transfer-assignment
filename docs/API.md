@@ -16,7 +16,7 @@ This document specifies HTTP request/response behavior for wallet-to-wallet tran
 - **Wallet IDs are positive integers** (`int64`, database identity values). Transfer IDs are positive integers as well.
 - **Idempotency keys are strings of 8–64 characters.** The handler and domain reject other lengths with `400`; the database enforces the same range (`chk_idempotency_key_length`) as a backstop.
 - An idempotency key identifies one logical request. A new intended transfer requires a new key.
-- Error responses use the envelope `{"error": "<message>"}`. Internal error details are never returned.
+- Error responses use the envelope `{"error": "<message>"}`, including errors raised by the framework (unknown route `404 {"error":"Not Found"}`, wrong method `405`). Internal error details are never returned.
 - No authentication scheme is prescribed by the assignment. Production authentication and idempotency-key scoping require a separate decision.
 
 ## 3. POST /transfers (required)
