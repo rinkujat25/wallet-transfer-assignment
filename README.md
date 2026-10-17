@@ -170,6 +170,28 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 make lint
 ```
 
+### SonarQube
+
+CI analyses every pull request with SonarQube (`.github/workflows/sonarqube.yml`, using [`sonar-project.properties`](./sonar-project.properties)). You can run the same analysis locally against a throwaway SonarQube in Docker.
+
+1. Start SonarQube (first start takes a minute or two, needs roughly 2 GB of memory):
+
+```bash
+make sonar-up
+```
+
+2. Open http://localhost:9000, sign in, change the initial administrator password when asked, then create a token under **My Account → Security**.
+
+3. Run the tests with coverage and upload the analysis:
+
+```bash
+SONAR_TOKEN=<your-token> make sonar-scan
+```
+
+The results appear in the `wallet-transfer-assignment` project at http://localhost:9000. `make sonar-down` stops SonarQube (add `-v` to `docker compose` yourself to wipe its data).
+
+Coverage comes from `make coverage` (unit tests, about 60%). To include the PostgreSQL integration tests, which exercise the repositories (about 83%), run `COVERAGE_TARGET=coverage-integration SONAR_TOKEN=<your-token> make sonar-scan` with the `.env` database available. Wiring code (`cmd/`, config, database, bootstrap, middleware, GORM models) is excluded from coverage.
+
 ### Manual race test
 
 With the stack running (`make docker-up`), fire concurrent requests from Node.js 18+. Modes: `opposite` (A→B and B→A), `same-sender`, `random` and `same-key` (one idempotency key sent by every request).

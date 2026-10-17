@@ -3,7 +3,7 @@ export
 
 DATABASE_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: migrate-up migrate-down migrate-version test test-integration lint docker-up docker-down docker-reset docker-logs
+.PHONY: migrate-up migrate-down migrate-version test test-integration lint coverage coverage-integration sonar-up sonar-down sonar-scan docker-up docker-down docker-reset docker-logs
 
 migrate-up:
 	migrate -path migrations -database "$(DATABASE_URL)" up
@@ -17,6 +17,20 @@ migrate-version:
 # Unit tests: domain, handler, service (in-memory fakes). No database needed.
 test:
 	go test -race ./...
+
+# Unit-test coverage report (coverage.out) for SonarQube and `go tool cover`.
+# Only packages that have tests are run: `go test -cover` on test-less packages trips over
+# toolchain mismatches on some setups ("compile: version ... does not match go tool version").
+TESTED_PKGS = $$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)
+TESTED_PKGS_INTEGRATION = $$(go list -tags integration -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)
+
+coverage:
+	go test -race -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out $(TESTED_PKGS)
+
+# Same, plus the PostgreSQL integration tests (needs the .env database): covers repositories.
+coverage-integration:
+	@unset APP_PORT APP_ENV DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME DB_SSLMODE LOG_LEVEL; \
+	go test -tags integration -race -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out -p 1 $(TESTED_PKGS_INTEGRATION)
 
 # Static analysis (config: .golangci.yml, same version as CI):
 #   go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
@@ -47,3 +61,21 @@ docker-reset:
 
 docker-logs:
 	@$(COMPOSE) logs -f api
+
+# --- SonarQube (local) -------------------------------------------------------------
+# 1. make sonar-up                  (first start takes ~1-2 minutes)
+# 2. open http://localhost:9000, log in, create a project token (My Account > Security)
+# 3. SONAR_TOKEN=<token> make sonar-scan
+sonar-up:
+	@$(COMPOSE) --profile sonar up -d --wait sonarqube
+
+sonar-down:
+	@$(COMPOSE) --profile sonar --profile sonar-scan down
+
+# Runs the tests with coverage (integration tests too when COVERAGE_TARGET=coverage-integration),
+# then analyses the project and uploads the result to the local SonarQube.
+COVERAGE_TARGET ?= coverage
+sonar-scan:
+	@test -n "$$SONAR_TOKEN" || { echo "Set SONAR_TOKEN (create one in SonarQube: My Account > Security)"; exit 1; }
+	@$(MAKE) $(COVERAGE_TARGET)
+	@$(COMPOSE) --profile sonar-scan run --rm sonar-scanner

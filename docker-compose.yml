@@ -83,5 +83,42 @@ services:
       timeout: 3s
       retries: 10
 
+  # --- Optional code-quality tooling (not started by a plain `docker compose up`) ---
+  # make sonar-up    starts a local SonarQube at http://localhost:9000
+  # make sonar-scan  runs the tests with coverage and sends the analysis to it
+  sonarqube:
+    image: sonarqube:community
+    profiles: [sonar, sonar-scan]
+    restart: unless-stopped
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "${SONAR_HOST_PORT:-9000}:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://127.0.0.1:9000/api/system/status | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:11
+    profiles: [sonar-scan]
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+    volumes:
+      - ./:/usr/src
+
 volumes:
   pgdata:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
