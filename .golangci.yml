@@ -19,6 +19,8 @@ linters:
     - bodyclose     # unclosed HTTP response bodies (tests)
     - errorlint     # use errors.Is / errors.As and %w
     - gocritic
+    - gocyclo       # keeps functions like CreateTransfer from growing back
+    - funlen
     - gofmt
     - goimports
     - gosec
@@ -34,6 +36,11 @@ linters-settings:
     local-prefixes: wallet-transfer-assignment
   gocritic:
     enabled-tags: [diagnostic, style]
+  gocyclo:
+    min-complexity: 15
+  funlen:
+    lines: 80
+    statements: 50
   govet:
     # Default analyzers plus a few extras. Deliberately no `enable-all`: it would
     # turn on fieldalignment, whose --fix reorders struct fields and breaks
@@ -48,4 +55,4 @@ issues:
   exclude-rules:
     # Tests may use fixed credentials, ignore errors from cleanup, etc.
     - path: _test\.go
-      linters: [gosec, errcheck, unparam]
+      linters: [gosec, errcheck, unparam, funlen, gocyclo]
