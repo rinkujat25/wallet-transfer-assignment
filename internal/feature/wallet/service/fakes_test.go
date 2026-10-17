@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/repository"
 
@@ -115,7 +116,7 @@ func (m fakeTxManager) WithinTransaction(_ context.Context, fn func(tx *gorm.DB)
 		if !m.s.commitApplied {
 			m.s.restore(before)
 		}
-		return fmt.Errorf("%w: %v", repository.ErrCommitUncertain, err)
+		return fmt.Errorf("%w: %w", repository.ErrCommitUncertain, err)
 	}
 	return nil
 }

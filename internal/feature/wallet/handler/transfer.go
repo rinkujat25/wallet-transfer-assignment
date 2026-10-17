@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/repository"
 	"wallet-transfer-assignment/internal/feature/wallet/service"
@@ -30,7 +31,6 @@ type createTransferBody struct {
 // POST /transfers
 
 func (h *TransferHandler) CreateTransfer(c fiber.Ctx) error {
-
 	var req createTransferBody
 	// 1. Parse request
 	if err := c.Bind().JSON(&req); err != nil {
@@ -62,7 +62,6 @@ func (h *TransferHandler) CreateTransfer(c fiber.Ctx) error {
 }
 
 func validateTransferRequest(req createTransferBody) error {
-
 	if strings.TrimSpace(req.IdempotencyKey) == "" ||
 		len(req.IdempotencyKey) < domain.MinIdempotencyKeyLength ||
 		len(req.IdempotencyKey) > domain.MaxIdempotencyKeyLength {
@@ -82,7 +81,6 @@ func validateTransferRequest(req createTransferBody) error {
 		return errors.New("amount must be greater than zero")
 	}
 	return nil
-
 }
 
 func handleTransferError(c fiber.Ctx, err error) error {

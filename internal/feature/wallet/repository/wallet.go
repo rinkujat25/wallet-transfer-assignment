@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/model"
 
@@ -27,7 +28,6 @@ func NewWalletRepository() WalletRepository {
 
 // GetByID fetches a wallet without locking.
 func (r *walletRepository) GetByID(ctx context.Context, tx *gorm.DB, id int64) (*domain.Wallet, error) {
-
 	var wallet model.Wallet
 
 	err := tx.WithContext(ctx).Where("id = ?", id).First(&wallet).Error

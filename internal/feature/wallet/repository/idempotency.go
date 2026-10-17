@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/model"
 
@@ -28,7 +29,6 @@ func NewIdempotencyRepository() IdempotencyRepository {
 // Create attempts to insert an idempotency record.
 // Returns false when the key already exists.
 func (r *idempotencyRepository) Create(ctx context.Context, tx *gorm.DB, record *domain.IdempotencyRecord) (bool, error) {
-
 	dbRecord := model.IdempotencyRecord{
 		IdempotencyKey: record.IdempotencyKey,
 		RequestHash:    record.RequestHash,
@@ -59,7 +59,6 @@ func (r *idempotencyRepository) Create(ctx context.Context, tx *gorm.DB, record 
 
 // GetByKey fetches an existing idempotency record.
 func (r *idempotencyRepository) GetByKey(ctx context.Context, tx *gorm.DB, key string) (*domain.IdempotencyRecord, error) {
-
 	var dbRecord model.IdempotencyRecord
 
 	err := tx.WithContext(ctx).
@@ -79,7 +78,6 @@ func (r *idempotencyRepository) GetByKey(ctx context.Context, tx *gorm.DB, key s
 
 // SaveResponse stores the original HTTP response for future retries.
 func (r *idempotencyRepository) SaveResponse(ctx context.Context, tx *gorm.DB, record *domain.IdempotencyRecord) error {
-
 	if record.ResponseStatus == nil ||
 		len(record.ResponseBody) == 0 {
 		return domain.ErrInvalidIdempotency
@@ -108,7 +106,6 @@ func (r *idempotencyRepository) SaveResponse(ctx context.Context, tx *gorm.DB, r
 
 // Convert database model to domain entity.
 func toDomainIdempotency(record model.IdempotencyRecord) *domain.IdempotencyRecord {
-
 	return &domain.IdempotencyRecord{
 		ID:             record.ID,
 		IdempotencyKey: record.IdempotencyKey,

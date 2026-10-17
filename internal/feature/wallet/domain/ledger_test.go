@@ -3,6 +3,7 @@ package domain_test
 import (
 	"errors"
 	"testing"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 )
 

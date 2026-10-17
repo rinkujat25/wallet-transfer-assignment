@@ -43,7 +43,6 @@ func (l LedgerEntry) Validate() error {
 
 // NewLedgerEntries creates the debit and credit pair for a transfer.
 func NewLedgerEntries(transferID, fromWalletID, toWalletID, amount int64) ([]LedgerEntry, error) {
-
 	if transferID <= 0 ||
 		fromWalletID <= 0 ||
 		toWalletID <= 0 ||

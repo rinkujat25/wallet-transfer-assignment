@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 )
 

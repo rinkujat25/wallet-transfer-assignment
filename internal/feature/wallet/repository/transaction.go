@@ -28,7 +28,6 @@ func NewTransactionManager(db *gorm.DB) TransactionManager {
 var ErrCommitUncertain = errors.New("transaction commit result uncertain")
 
 func (m *transactionManager) WithinTransaction(ctx context.Context, fn func(tx *gorm.DB) error) error {
-
 	tx := m.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -43,7 +42,7 @@ func (m *transactionManager) WithinTransaction(ctx context.Context, fn func(tx *
 
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
-		return fmt.Errorf("%w: %v", ErrCommitUncertain, err)
+		return fmt.Errorf("%w: %w", ErrCommitUncertain, err)
 	}
 
 	return nil

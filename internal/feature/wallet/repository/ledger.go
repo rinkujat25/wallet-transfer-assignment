@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/model"
 
@@ -31,7 +32,6 @@ func NewLedgerRepository() LedgerRepository {
 
 // CreateEntries inserts both ledger entries in the provided transaction.
 func (r *ledgerRepository) CreateEntries(ctx context.Context, tx *gorm.DB, entries []domain.LedgerEntry) error {
-
 	if len(entries) != 2 {
 		return domain.ErrInvalidLedgerEntry
 	}
@@ -68,7 +68,6 @@ func (r *ledgerRepository) CreateEntries(ctx context.Context, tx *gorm.DB, entri
 
 // GetByTransferID returns ledger entries for a transfer.
 func (r *ledgerRepository) GetByTransferID(ctx context.Context, tx *gorm.DB, transferID int64) ([]domain.LedgerEntry, error) {
-
 	var records []model.LedgerEntry
 
 	err := tx.WithContext(ctx).

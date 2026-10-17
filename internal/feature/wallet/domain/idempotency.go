@@ -34,7 +34,6 @@ type IdempotencyRecord struct {
 
 // TransferFingerprint generates a deterministic hash of transfer details.
 func TransferFingerprint(fromWalletID, toWalletID, amount int64) (string, error) {
-
 	payload := struct {
 		FromWalletID int64 `json:"fromWalletId"`
 		ToWalletID   int64 `json:"toWalletId"`

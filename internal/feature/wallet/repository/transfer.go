@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/model"
 
@@ -26,7 +27,6 @@ func NewTransferRepository() TransferRepository {
 // Create attempts to claim the idempotency key.
 // Returns false when another transfer already owns the key.
 func (r *transferRepository) Create(ctx context.Context, tx *gorm.DB, transfer *domain.Transfer) (bool, error) {
-
 	record := model.Transfer{
 		IdempotencyKey: transfer.IdempotencyKey,
 		FromWalletID:   transfer.FromWalletID,
@@ -60,7 +60,6 @@ func (r *transferRepository) Create(ctx context.Context, tx *gorm.DB, transfer *
 
 // GetByIdempotencyKey fetches an existing transfer.
 func (r *transferRepository) GetByIdempotencyKey(ctx context.Context, tx *gorm.DB, key string) (*domain.Transfer, error) {
-
 	var record model.Transfer
 
 	err := tx.WithContext(ctx).
@@ -80,7 +79,6 @@ func (r *transferRepository) GetByIdempotencyKey(ctx context.Context, tx *gorm.D
 
 // UpdateStatus persists a legal transfer status transition.
 func (r *transferRepository) UpdateStatus(ctx context.Context, tx *gorm.DB, transfer *domain.Transfer) error {
-
 	if transfer.Status != domain.TransferProcessed &&
 		transfer.Status != domain.TransferFailed {
 		return domain.ErrInvalidTransition

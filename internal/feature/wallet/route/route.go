@@ -11,6 +11,5 @@ type Handlers struct {
 }
 
 func RegisterRoutes(app *fiber.App, handlers Handlers) {
-
 	app.Post("/transfers", handlers.Transfer.CreateTransfer)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+
 	"wallet-transfer-assignment/internal/config"
 
 	"gorm.io/driver/postgres"
@@ -13,7 +14,6 @@ import (
 )
 
 func Connect(cfg *config.Config) (*gorm.DB, error) {
-
 	if cfg == nil {
 		return nil, fmt.Errorf("database configuration is nil")
 	}
@@ -49,5 +49,4 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
 	return db, nil
-
 }

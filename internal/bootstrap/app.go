@@ -13,7 +13,6 @@ type App struct {
 }
 
 func NewApp(db *gorm.DB) *App {
-
 	// 1. Initialize repositories
 	walletRepo := repository.NewWalletRepository()
 	transferRepo := repository.NewTransferRepository()

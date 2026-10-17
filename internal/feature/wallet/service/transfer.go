@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"time"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/repository"
 
@@ -72,7 +73,6 @@ func NewTransferService(
 	idempotencyRepo repository.IdempotencyRepository,
 	txManager repository.TransactionManager,
 ) TransferService {
-
 	return &transferService{
 		walletRepo:      walletRepo,
 		transferRepo:    transferRepo,
@@ -84,7 +84,6 @@ func NewTransferService(
 
 // CreateTransfer handles wallet-to-wallet transfers.
 func (s *transferService) CreateTransfer(ctx context.Context, req CreateTransferRequest) (*TransferResult, error) {
-
 	// Step 1: Validate request
 	transfer := domain.Transfer{
 		IdempotencyKey: req.IdempotencyKey,
@@ -94,7 +93,7 @@ func (s *transferService) CreateTransfer(ctx context.Context, req CreateTransfer
 		Status:         domain.TransferPending,
 	}
 	if err := transfer.Validate(); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidTransferRequest, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidTransferRequest, err)
 	}
 
 	// Step 2: Calculate request fingerprint
@@ -109,7 +108,6 @@ func (s *transferService) CreateTransfer(ctx context.Context, req CreateTransfer
 
 	const maxAttempts = 3
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-
 		// Reset per-attempt state so retries start from a clean transfer.
 		transfer.ID = 0
 		transfer.Status = domain.TransferPending
@@ -332,7 +330,7 @@ func (s *transferService) CreateTransfer(ctx context.Context, req CreateTransfer
 	return nil, errors.New("transfer retries exhausted")
 }
 
-func (s *transferService) getSavedResponse(ctx context.Context, key string, requestHash string) (*TransferResult, error) {
+func (s *transferService) getSavedResponse(ctx context.Context, key, requestHash string) (*TransferResult, error) {
 	var result *TransferResult
 	err := s.txManager.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		record, err := s.idempotencyRepo.GetByKey(ctx, tx, key)

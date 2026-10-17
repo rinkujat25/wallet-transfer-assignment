@@ -20,7 +20,6 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-
 	// Load .env without overriding existing environment variables.
 
 	if err := godotenv.Load(); err != nil {

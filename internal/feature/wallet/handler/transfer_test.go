@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
 	"wallet-transfer-assignment/internal/feature/wallet/domain"
 	"wallet-transfer-assignment/internal/feature/wallet/handler"
 	"wallet-transfer-assignment/internal/feature/wallet/repository"
@@ -38,7 +39,7 @@ func newApp(svc service.TransferService) *fiber.App {
 	return app
 }
 
-func post(t *testing.T, app *fiber.App, body string) (int, string) {
+func post(t *testing.T, app *fiber.App, body string) (status int, respBody string) {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/transfers", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

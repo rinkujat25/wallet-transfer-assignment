@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
 	"wallet-transfer-assignment/internal/bootstrap"
 	"wallet-transfer-assignment/internal/config"
 	"wallet-transfer-assignment/internal/database"
@@ -17,16 +17,24 @@ import (
 	"wallet-transfer-assignment/internal/middleware"
 
 	"github.com/gofiber/fiber/v3"
-	"gorm.io/gorm"
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	var cfg *config.Config
-	var err error
-	if cfg, err = config.Load(); err != nil {
-		logger.Error("configuration validation failed", "error", err)
+	slog.SetDefault(logger)
+
+	// run returns instead of calling os.Exit so deferred cleanup (DB close,
+	// signal handler release) always executes.
+	if err := run(logger); err != nil {
+		logger.Error("application failed", "error", err)
 		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("configuration validation failed: %w", err)
 	}
 
 	logger.Info(
@@ -35,21 +43,17 @@ func main() {
 		"port", cfg.AppPort,
 	)
 
-	// 3. Connect PostgreSQL
-	var db *gorm.DB
-	var sqlDB *sql.DB
-	if db, err = database.Connect(cfg); err != nil {
-		slog.Error("failed to connect database", "error", err)
-		os.Exit(1)
+	// Connect PostgreSQL
+	db, err := database.Connect(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to connect database: %w", err)
 	}
-	if sqlDB, err = db.DB(); err != nil {
-		slog.Error("failed to get database connection", "error", err)
-		os.Exit(1)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 	defer sqlDB.Close()
-	slog.Info("database connected successfully")
-
-	slog.SetDefault(logger)
+	logger.Info("database connected successfully")
 
 	app := fiber.New(fiber.Config{
 		AppName: "Wallet Transfer Service",
@@ -95,8 +99,7 @@ func main() {
 		logger.Info("shutdown signal received")
 
 	case err := <-serverErr:
-		logger.Error("HTTP server stopped unexpectedly", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("HTTP server stopped unexpectedly: %w", err)
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(
@@ -105,12 +108,10 @@ func main() {
 	)
 	defer cancel()
 
-	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
-		if !errors.Is(err, context.Canceled) {
-			logger.Error("graceful shutdown failed", "error", err)
-			os.Exit(1)
-		}
+	if err := app.ShutdownWithContext(shutdownCtx); err != nil && !errors.Is(err, context.Canceled) {
+		return fmt.Errorf("graceful shutdown failed: %w", err)
 	}
 
 	logger.Info("application stopped")
+	return nil
 }
