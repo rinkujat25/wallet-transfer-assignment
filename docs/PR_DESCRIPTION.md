@@ -117,7 +117,7 @@ I checked that the tests catch regressions by temporarily breaking the code (dro
 - Insufficient funds returns `409` and records a `FAILED` transfer; a missing wallet returns `404` and rolls back, leaving the key unused. Exhausted deadlock retries return `500`.
 - No authentication, so idempotency keys are global rather than per caller; keys are kept indefinitely.
 - Not implemented (optional in the assignment): wallet balance and transfer history APIs, metrics, request/correlation ids, lock and statement timeouts, a database readiness check.
-- go.mod needs Go 1.26 because Fiber v3.6.1 and its dependencies require it, while the repository workflow pins Go 1.24 and golangci-lint v1.64.8, so the CI lint step may need a newer toolchain.
+- **Go version:** I developed and tested everything with Go 1.26, and `go.mod` requires 1.26 because Fiber v3.6.1 and its dependencies need it. I only noticed after completing the assignment that the repository workflow pins Go 1.24 and golangci-lint v1.64.8, so the CI lint step may need a newer toolchain (Go can fetch a newer toolchain automatically when the runner allows it).
 - Tests that need PostgreSQL are behind a build tag, so the CI command `go test ./...` runs only the unit tests; the integration suite is run with `make test-integration`.
 
 ## Checklist
