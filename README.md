@@ -170,37 +170,21 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 make lint
 ```
 
-### SonarQube
+### SonarQube Cloud
 
-CI analyses every pull request with SonarQube (`.github/workflows/sonarqube.yml`, using [`sonar-project.properties`](./sonar-project.properties)). You can run the same analysis locally against a throwaway SonarQube in Docker.
+CI analyses every pull request with SonarQube (`.github/workflows/sonarqube.yml`, using [`sonar-project.properties`](./sonar-project.properties)). You can run the same analysis from your machine against [SonarQube Cloud](https://sonarcloud.io); only Docker is needed, because the SonarScanner CLI runs in a container.
 
-1. Start SonarQube (first start takes a minute or two, needs roughly 2 GB of memory):
-
-```bash
-make sonar-up
-```
-
-2. Open http://localhost:9000, sign in, change the initial administrator password when asked, then create a token under **My Account → Security**.
-
+1. In SonarQube Cloud import the repository, note your **organization key**, and make sure `sonar.projectKey` in `sonar-project.properties` matches the project key it assigns (usually `<organization>_<repository>`).
+2. Create a token under **My Account → Security**.
 3. Run the tests with coverage and upload the analysis:
 
 ```bash
-SONAR_TOKEN=<your-token> make sonar-scan
+SONAR_TOKEN=<your-token> SONAR_ORGANIZATION=<organization-key> make sonar-scan
 ```
 
-The results appear in the `wallet-transfer-assignment` project at http://localhost:9000. `make sonar-down` stops SonarQube (add `-v` to `docker compose` yourself to wipe its data).
+This uploads the source code and coverage to sonarcloud.io; the results appear in the project dashboard. Commit your changes first, otherwise SonarQube reports missing blame information for the modified files.
 
-#### SonarQube Cloud instead of the local server
-
-A token from [SonarQube Cloud](https://sonarcloud.io) works too. Import the repository there, put the **project key** it assigns (usually `<organization>_<repository>`) in `sonar.projectKey` in [`sonar-project.properties`](./sonar-project.properties), note your **organization key**, then run:
-
-```bash
-SONAR_TOKEN=<cloud-token> SONAR_ORGANIZATION=<organization-key> make sonar-cloud-scan
-```
-
-This uploads the source code and coverage to sonarcloud.io. Cloud tokens do not work against the local SonarQube (`make sonar-scan`) and the reverse.
-
-Coverage comes from `make coverage` (unit tests, about 60%). To include the PostgreSQL integration tests, which exercise the repositories (about 83%), run `COVERAGE_TARGET=coverage-integration SONAR_TOKEN=<your-token> make sonar-scan` with the `.env` database available. Wiring code (`cmd/`, config, database, bootstrap, middleware, GORM models) is excluded from coverage.
+Coverage comes from `make coverage` (unit tests, about 64%). To include the PostgreSQL integration tests, which exercise the repositories (about 90%), run `COVERAGE_TARGET=coverage-integration make sonar-scan` with the `.env` database available. Wiring code (`cmd/`, config, database, bootstrap, middleware, GORM models) is excluded from coverage.
 
 ### Manual race test
 
