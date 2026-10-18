@@ -250,6 +250,7 @@ Covered by the automated tests (`make test`, `make test-integration`; see `docs/
 - **Business failure status:** Decided: `409` with `{"error":"insufficient funds"}`.
 - **Exhausted transient retries:** Decided: `500` (the retried database error is not exposed). `503` is used only for an unconfirmed commit.
 - **Idempotency key length:** Decided: 8–64 characters, validated in the handler and domain and enforced by the database.
+- **Difference from the assignment's example:** the assignment's sample request uses string wallet ids (`"wallet_1"`) and a 6-character key (`"abc123"`). It is an example, not a format requirement; this service uses integer wallet ids and keys of 8–64 characters (see §2). `{"idempotencyKey":"abc12345","fromWalletId":1,"toWalletId":2,"amount":100}` is the equivalent request.
 
 ## 12. Implementation alignment
 

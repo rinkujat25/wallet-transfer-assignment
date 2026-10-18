@@ -202,6 +202,7 @@ The script targets `http://localhost:8090/transfers` by default; set `API_URL` (
 
 ## Assumptions and trade-offs
 
+- **The assignment's example request is illustrative.** It uses string wallet ids (`"wallet_1"`) and a short key (`"abc123"`); this service uses numeric wallet ids and idempotency keys of 8–64 characters. The equivalent request is `{"idempotencyKey": "abc12345", "fromWalletId": 1, "toWalletId": 2, "amount": 100}`. The assignment does not fix an id format; numeric ids come from database identity columns and keys of at least 8 characters avoid trivially guessable values.
 - Balances are stored on `wallets` and updated under row locks (no balance derived from the ledger).
 - Replay bodies are re-serialised to a canonical JSON form, because PostgreSQL `JSONB` reformats stored JSON.
 - A key that is claimed but has no stored response yet returns `409` rather than re-executing the transfer.
