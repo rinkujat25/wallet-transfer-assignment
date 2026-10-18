@@ -1,8 +1,3 @@
-<!--
-Draft of the pull request description, following .github/pull_request_template.md.
-Paste it into the PR body, fill the two TODO lines, then delete this file (it is not meant to be committed).
--->
-
 ## Summary
 
 A Go (Fiber v3, GORM, PostgreSQL) service with `POST /transfers` for wallet-to-wallet transfers. Each transfer runs in **one database transaction** that claims the idempotency key, locks both wallets, moves the money, writes exactly two ledger entries (debit and credit), sets the final state and stores the response for replay. Duplicate requests return the original response, concurrent debits cannot overspend, and a failure at any step rolls everything back.
@@ -41,7 +36,7 @@ I treated AI as a coding assistant rather than relying on it to make architectur
 
 ### 3. AI conversation transcript
 
-I will provide the AI conversation transcript separately as part of the submission. If the complete transcript is unavailable, I will provide the prompts used during development. <!-- TODO: say where they are (for example "in the PR comment below") -->
+I will provide the AI conversation transcript separately as part of the submission. If the complete transcript is unavailable, I will provide the prompts used during development.
 
 ### 4. Engineering ownership
 
